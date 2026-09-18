@@ -29,6 +29,8 @@ export interface FaturasFiltros {
 export interface EmpresaFaturas {
   empresaId: string;
   nome_negocio: string;
+  /** Gateway da assinatura. Na Woovi, `customerId` é o id da assinatura lá. */
+  gateway?: 'asaas' | 'woovi';
   customerId: string | null;
   faturas: AsaasFatura[];
   hasMore: boolean;
@@ -472,7 +474,7 @@ class SuperAdminService {
       );
       return response;
     } catch (error) {
-      console.error('Erro ao buscar faturas da empresa no Asaas:', error);
+      console.error('Erro ao buscar faturas da empresa:', error);
       throw error;
     }
   }

@@ -51,11 +51,13 @@ const Assinaturas = () => {
   const [updating, setUpdating] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Faturas Asaas
+  // Faturas (Asaas ou Woovi, conforme o gateway da assinatura)
   const [isFaturasModalOpen, setIsFaturasModalOpen] = useState(false);
   const [loadingFaturas, setLoadingFaturas] = useState(false);
   const [faturasData, setFaturasData] = useState<EmpresaFaturas | null>(null);
   const [faturasEmpresaId, setFaturasEmpresaId] = useState<string>('');
+  const [faturasGateway, setFaturasGateway] = useState<'asaas' | 'woovi'>('asaas');
+  const nomeGatewayFaturas = faturasGateway === 'woovi' ? 'Woovi' : 'Asaas';
   const [faturaFiltros, setFaturaFiltros] = useState({ vencimentoInicio: '', vencimentoFim: '', status: '' });
 
   const [editForm, setEditForm] = useState({
@@ -153,7 +155,7 @@ const Assinaturas = () => {
     }
   };
 
-  // Status das cobranças no Asaas
+  // Status das faturas (vocabulário do Asaas; a Woovi é mapeada para ele no backend)
   const getFaturaStatusColor = (status: string) => {
     switch (status) {
       case 'RECEIVED':
@@ -163,6 +165,8 @@ const Assinaturas = () => {
       case 'PENDING':
       case 'AWAITING_RISK_ANALYSIS':
         return 'bg-yellow-100 text-yellow-700';
+      case 'SCHEDULED':
+        return 'bg-blue-100 text-blue-700';
       case 'OVERDUE':
         return 'bg-red-100 text-red-700';
       case 'REFUNDED':
@@ -183,6 +187,8 @@ const Assinaturas = () => {
         return 'Confirmada';
       case 'PENDING':
         return 'Pendente';
+      case 'SCHEDULED':
+        return 'Agendada';
       case 'OVERDUE':
         return 'Vencida';
       case 'REFUNDED':
@@ -212,8 +218,9 @@ const Assinaturas = () => {
     try {
       const data = await superAdminService.getFaturasEmpresa(empresaId, filtros);
       setFaturasData(data);
+      if (data.gateway) setFaturasGateway(data.gateway);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erro ao buscar faturas no Asaas');
+      toast.error(error?.response?.data?.message || 'Erro ao buscar faturas');
       setFaturasData(null);
     } finally {
       setLoadingFaturas(false);
@@ -222,6 +229,7 @@ const Assinaturas = () => {
 
   const handleViewFaturas = (assinatura: Assinatura) => {
     setFaturasEmpresaId(assinatura.empresaId);
+    setFaturasGateway(assinatura.gateway === 'woovi' ? 'woovi' : 'asaas');
     setFaturaFiltros({ vencimentoInicio: '', vencimentoFim: '', status: '' });
     setFaturasData(null);
     setIsFaturasModalOpen(true);
@@ -479,7 +487,7 @@ const Assinaturas = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleViewFaturas(assinatura)} title="Ver faturas (Asaas)">
+                  <Button variant="outline" size="sm" onClick={() => handleViewFaturas(assinatura)} title={`Ver faturas (${assinatura.gateway === 'woovi' ? 'Woovi' : 'Asaas'})`}>
                     <Receipt className="w-4 h-4" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(assinatura)} title="Editar">
@@ -510,11 +518,11 @@ const Assinaturas = () => {
         </Card>
       )}
 
-      {/* Faturas (Asaas) Modal */}
+      {/* Faturas Modal */}
       <Modal
         isOpen={isFaturasModalOpen}
         onClose={() => setIsFaturasModalOpen(false)}
-        title={`Faturas Asaas${faturasData?.nome_negocio ? ` - ${faturasData.nome_negocio}` : ''}`}
+        title={`Faturas ${nomeGatewayFaturas}${faturasData?.nome_negocio ? ` - ${faturasData.nome_negocio}` : ''}`}
         size="lg"
       >
         {/* Filtros */}
@@ -547,6 +555,7 @@ const Assinaturas = () => {
               >
                 <option value="">Todos</option>
                 <option value="PENDING">Pendente</option>
+                {faturasGateway === 'woovi' && <option value="SCHEDULED">Agendada</option>}
                 <option value="RECEIVED">Recebida</option>
                 <option value="CONFIRMED">Confirmada</option>
                 <option value="OVERDUE">Vencida</option>
@@ -562,7 +571,7 @@ const Assinaturas = () => {
         {loadingFaturas ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
             <Loader2 className="w-8 h-8 animate-spin mb-3" />
-            <p className="text-sm">Buscando faturas no Asaas...</p>
+            <p className="text-sm">Buscando faturas no {nomeGatewayFaturas}...</p>
           </div>
         ) : !faturasData ? (
           <div className="text-center py-12">
@@ -572,7 +581,7 @@ const Assinaturas = () => {
         ) : !faturasData.customerId ? (
           <div className="text-center py-12">
             <AlertCircle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-            <p className="text-gray-600">{faturasData.message || 'Empresa sem cliente Asaas vinculado.'}</p>
+            <p className="text-gray-600">{faturasData.message || `Empresa sem cliente ${nomeGatewayFaturas} vinculado.`}</p>
           </div>
         ) : faturasData.faturas.length === 0 ? (
           <div className="text-center py-12">
@@ -582,7 +591,7 @@ const Assinaturas = () => {
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-gray-400">
-              {faturasData.faturas.length} de {faturasData.totalCount} fatura(s) • Cliente Asaas: <span className="font-mono">{faturasData.customerId}</span>
+              {faturasData.faturas.length} de {faturasData.totalCount} fatura(s) • {faturasGateway === 'woovi' ? 'Assinatura Woovi' : 'Cliente Asaas'}: <span className="font-mono">{faturasData.customerId}</span>
             </p>
             <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
               {faturasData.faturas.map((f) => (
