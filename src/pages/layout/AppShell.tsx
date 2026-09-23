@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { useAuth } from '@/contexts/AuthContext'
-import { filterNavForUser, type NavGroup, type NavItem } from '@/config/navigation'
+import { filterNavForUser, findGroupForPath, type NavGroup, type NavItem } from '@/config/navigation'
 import { NavIcon } from '@/components/NavIcon'
 import { Button } from '@/components/Button'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -19,6 +19,8 @@ function linkClass(active: boolean) {
 function SidebarNav({
   top,
   groups,
+  abertos,
+  onToggleGroup,
   onNavigate,
   email,
   onLogout,
@@ -26,6 +28,8 @@ function SidebarNav({
 }: {
   top: NavItem[]
   groups: NavGroup[]
+  abertos: string[]
+  onToggleGroup: (id: string) => void
   onNavigate?: () => void
   email?: string
   onLogout: () => void
@@ -54,26 +58,49 @@ function SidebarNav({
           </NavLink>
         ))}
 
-        {groups.map((group) => (
-          <div key={group.id} className="pt-4">
-            <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-text-faint">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.key}
-                  to={item.to}
-                  onClick={onNavigate}
-                  className={({ isActive }) => linkClass(isActive)}
-                >
-                  <NavIcon name={item.icon} className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </NavLink>
-              ))}
+        {groups.map((group) => {
+          const aberto = abertos.includes(group.id)
+          return (
+            <div key={group.id} className="pt-2">
+              <button
+                type="button"
+                onClick={() => onToggleGroup(group.id)}
+                aria-expanded={aberto}
+                aria-controls={`nav-grupo-${group.id}`}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-text-faint transition-colors hover:bg-teal-hover-bg hover:text-text-muted"
+              >
+                <NavIcon
+                  name="chevron"
+                  className={clsx(
+                    'h-3 w-3 shrink-0 transition-transform duration-200',
+                    aberto && 'rotate-90',
+                  )}
+                />
+                <span className="truncate text-left">{group.label}</span>
+                {!aberto && (
+                  <span className="ml-auto shrink-0 text-[10px] font-semibold text-text-faint/70">
+                    {group.items.length}
+                  </span>
+                )}
+              </button>
+              {aberto && (
+                <div id={`nav-grupo-${group.id}`} className="mt-0.5 space-y-0.5">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.key}
+                      to={item.to}
+                      onClick={onNavigate}
+                      className={({ isActive }) => clsx(linkClass(isActive), 'pl-8')}
+                    >
+                      <NavIcon name={item.icon} className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </nav>
 
       <div className="shrink-0 border-t border-teal-border p-3">
@@ -108,15 +135,52 @@ const MOBILE_QUICK: { to: string; label: string; icon: string; match?: (path: st
   },
 ]
 
+const CHAVE_NAV_ABERTOS = 'unna_sa_nav_abertos'
+
+function lerGruposAbertos(): string[] {
+  try {
+    const bruto = localStorage.getItem(CHAVE_NAV_ABERTOS)
+    const valor = bruto ? JSON.parse(bruto) : null
+    return Array.isArray(valor) ? valor.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    // Storage bloqueado ou conteúdo corrompido: começa tudo fechado.
+    return []
+  }
+}
+
 export function AppShell() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [gruposAbertos, setGruposAbertos] = useState<string[]>(lerGruposAbertos)
 
   const isLimited = user?.is_limited === true
   const { top, groups } = filterNavForUser(isLimited)
   const brand = isLimited ? 'Painel SDR' : 'Unna Admin'
+
+  const grupoAtivo = findGroupForPath(groups, location.pathname)
+
+  // O grupo da rota atual abre sozinho — ninguém deve cair numa tela cujo
+  // menu está fechado. O que o usuário abriu à mão continua aberto.
+  useEffect(() => {
+    if (!grupoAtivo) return
+    setGruposAbertos((atuais) => (atuais.includes(grupoAtivo) ? atuais : [...atuais, grupoAtivo]))
+  }, [grupoAtivo])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAVE_NAV_ABERTOS, JSON.stringify(gruposAbertos))
+    } catch {
+      // Sem storage o acordeão ainda funciona, só não lembra entre sessões.
+    }
+  }, [gruposAbertos])
+
+  const alternarGrupo = useCallback((id: string) => {
+    setGruposAbertos((atuais) =>
+      atuais.includes(id) ? atuais.filter((g) => g !== id) : [...atuais, id],
+    )
+  }, [])
 
   const allItems = [...top, ...groups.flatMap((g) => g.items)]
     .sort((a, b) => b.to.length - a.to.length)
@@ -182,6 +246,8 @@ export function AppShell() {
         <SidebarNav
           top={top}
           groups={groups}
+          abertos={gruposAbertos}
+          onToggleGroup={alternarGrupo}
           email={user?.email}
           onLogout={handleLogout}
           brand={brand}
@@ -226,6 +292,8 @@ export function AppShell() {
           <SidebarNav
             top={top}
             groups={groups}
+            abertos={gruposAbertos}
+            onToggleGroup={alternarGrupo}
             email={user?.email}
             onLogout={handleLogout}
             onNavigate={() => setMenuOpen(false)}

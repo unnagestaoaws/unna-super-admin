@@ -20,6 +20,11 @@ export const NAV_TOP: NavItem[] = [
   { key: 'sdr-winback-campanhas', label: 'Winback', to: '/sdr/winback/campanhas', icon: 'activity', limitedOnly: true },
 ]
 
+/**
+ * Grupos = seções do acordeão da sidebar. Mantenha cada grupo com no máximo
+ * ~5 itens: acima disso o grupo aberto volta a rolar e o acordeão perde a
+ * função. Grupo novo é melhor do que grupo grande.
+ */
 export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'gestao',
@@ -54,17 +59,25 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: 'crescimento',
+    label: 'Crescimento & Dados',
+    hideWhenLimited: true,
+    items: [
+      { key: 'uso-sistema', label: 'Uso do sistema', to: '/uso-sistema', icon: 'chart' },
+      { key: 'relatorios', label: 'Relatórios', to: '/relatorios', icon: 'chart' },
+      { key: 'marketing', label: 'Marketing', to: '/marketing', icon: 'activity' },
+      { key: 'atribuicao', label: 'Atribuição (Ads)', to: '/atribuicao', icon: 'activity' },
+    ],
+  },
+  {
     id: 'sistema',
     label: 'Configurações & Sistema',
     hideWhenLimited: true,
     items: [
       // { key: 'features', label: 'Features', to: '/feature-management', icon: 'settings' },
+      { key: 'monitoramento', label: 'Monitoramento', to: '/monitoramento', icon: 'activity' },
       { key: 'webhooks', label: 'Webhooks', to: '/webhooks', icon: 'activity' },
       { key: 'login-logs', label: 'Logs de login', to: '/login-logs', icon: 'activity' },
-      { key: 'monitoramento', label: 'Monitoramento', to: '/monitoramento', icon: 'activity' },
-      { key: 'marketing', label: 'Marketing', to: '/marketing', icon: 'settings' },
-      { key: 'atribuicao', label: 'Atribuição (Ads)', to: '/atribuicao', icon: 'settings' },
-      { key: 'relatorios', label: 'Relatórios', to: '/relatorios', icon: 'activity' },
       { key: 'solicitacoes-lgpd', label: 'Solicitações LGPD', to: '/solicitacoes-lgpd', icon: 'shield' },
       { key: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: 'settings' },
     ],
@@ -91,4 +104,22 @@ export function filterNavForUser(isLimited: boolean) {
     : NAV_GROUPS
 
   return { top, groups }
+}
+
+/**
+ * Grupo que contém a rota atual — é o que o acordeão abre sozinho, para o
+ * usuário nunca cair numa tela cujo menu está fechado.
+ */
+export function findGroupForPath(groups: NavGroup[], pathname: string): string | null {
+  let melhor: { id: string; tamanho: number } | null = null
+  for (const group of groups) {
+    for (const item of group.items) {
+      if (pathname === item.to || pathname.startsWith(`${item.to}/`)) {
+        if (!melhor || item.to.length > melhor.tamanho) {
+          melhor = { id: group.id, tamanho: item.to.length }
+        }
+      }
+    }
+  }
+  return melhor?.id ?? null
 }

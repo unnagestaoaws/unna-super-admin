@@ -77,6 +77,21 @@ export function NavIcon({ name, className = 'h-4 w-4' }: { name: string; classNa
           <path d="m9 12 2 2 4-5" />
         </svg>
       )
+    case 'chart':
+      return (
+        <svg {...props}>
+          <line x1="3" y1="21" x2="21" y2="21" />
+          <rect x="5" y="11" width="4" height="7" rx="1" />
+          <rect x="11" y="6" width="4" height="12" rx="1" />
+          <rect x="17" y="14" width="4" height="4" rx="1" />
+        </svg>
+      )
+    case 'chevron':
+      return (
+        <svg {...props}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      )
     case 'logout':
       return (
         <svg {...props}>
