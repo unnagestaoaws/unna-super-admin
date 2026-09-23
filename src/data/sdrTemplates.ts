@@ -152,15 +152,22 @@ export const SDR_SEGMENTS: Record<SdrSegmentKey, SdrSegment> = {
     oferta: 'Remover fricção de início, trial guiado.',
     mensagens: [
       {
-        label: 'Abertura',
+        label: 'Boas-vindas',
+        quando: 'Logo após o cadastro, antes de qualquer contato comercial.',
         texto:
-          'Oi {nome}! Vi que você chegou a se cadastrar na Unna mas não chegou a testar. Rolou alguma dúvida ou trava? Posso te mostrar o sistema em 5 minutos.',
+          'Olá {nome}! Tudo bem? 💜\n\nSeja muito bem-vindo(a) à Unna, a plataforma feita para descomplicar a gestão do seu negócio de beleza!\nEstamos muito felizes em ter você aqui.\nA partir de agora, você está a um passo de dar adeus ao caderninho e ter o controle total da sua agenda, financeiro e comissões em um só lugar.\n\nSe precisar de qualquer ajuda para dar os primeiros passos ou configurar sua conta, nosso time de suporte está totalmente à disposição por aqui.\nÉ só chamar!\n\nAbraços,\nEquipe Unna',
       },
       {
-        label: 'Follow-up 48h',
-        quando: 'Sem resposta em 48h',
+        label: 'Boas-vindas (dor da rotina)',
+        quando: 'Variação para quem já tem salão/clínica rodando.',
         texto:
-          '{nome}, ainda faz sentido pra você conhecer a Unna? Se quiser, ativo seu teste agora mesmo, sem compromisso.',
+          'Oi {nome}, que bom ter você com a gente!\n\nSabemos que a rotina em um salão ou clínica de estética é corrida e que a falta de tempo ou clientes que faltam sem avisar geram muita dor de cabeça.\n\nA Unna nasceu justamente para devolver a leveza ao seu trabalho e potencializar seus resultados.\nQueremos ver o seu negócio crescer!\n\nSe tiver qualquer dúvida sobre como usar a agenda, integrar seu WhatsApp ou mexer no painel, não hesite em nos mandar uma mensagem.\nO nosso suporte está aqui para te ajudar no que for preciso.\n\nBom trabalho e conte com a Unna! 🚀',
+      },
+      {
+        label: 'Boas-vindas (convite ao setup)',
+        quando: 'Variação com CTA de configuração em 10 minutos.',
+        texto:
+          'Olá, {nome}!\nObrigado pelo interesse na Unna!\n\nVocê acaba de escolher o caminho mais simples e completo para gerenciar seu espaço de beleza.\n\nVocê sabia que pode configurar sua agenda e o financeiro em menos de 10 minutos?\nPara que sua experiência seja perfeita, lembre-se: nosso suporte está 100% à disposição.\n\nSe surgir qualquer dúvida durante o seu teste ou se precisar de ajuda para entender os planos, basta responder a esta mensagem.\n\nVamos juntos crescer o seu negócio!\n✨ Time Unna',
       },
     ],
   },
