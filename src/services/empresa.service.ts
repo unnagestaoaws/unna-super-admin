@@ -128,6 +128,7 @@ export interface AtribuicaoGrupo {
   adDriven: number;
   google: number;
   meta: number;
+  ativas: number;
 }
 
 export interface CadastroAtribuido {
@@ -142,6 +143,7 @@ export interface CadastroAtribuido {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   utm_content?: string | null;
+  assinatura_status?: 'ACTIVE' | 'TRIAL' | 'PENDING' | 'CANCELLED' | 'EXPIRED' | null;
 }
 
 export interface RelatorioAtribuicao {
@@ -153,6 +155,10 @@ export interface RelatorioAtribuicao {
     atribuiveis_meta: number;
     com_utm: number;
     sem_atribuicao: number;
+    assinaturas_ativas: number;
+    ativas_de_anuncio: number;
+    ativas_google: number;
+    ativas_meta: number;
   };
   por_fonte: AtribuicaoGrupo[];
   por_campanha: AtribuicaoGrupo[];

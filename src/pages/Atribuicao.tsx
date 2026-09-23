@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Button from '@/components/ui/Button';
 import {
   AlertCircle,
+  BadgeCheck,
   Share2 as Facebook,
   Megaphone,
   RefreshCw,
@@ -55,6 +56,14 @@ const origemDoCadastro = (c: {
   return { label: 'Sem atribuição', className: 'bg-gray-100 text-gray-500' };
 };
 
+const STATUS_ASSINATURA: Record<string, { label: string; className: string }> = {
+  ACTIVE: { label: 'Ativa', className: 'bg-green-100 text-green-700' },
+  TRIAL: { label: 'Trial', className: 'bg-sky-100 text-sky-700' },
+  PENDING: { label: 'Pendente', className: 'bg-amber-100 text-amber-700' },
+  CANCELLED: { label: 'Cancelada', className: 'bg-red-100 text-red-700' },
+  EXPIRED: { label: 'Expirada', className: 'bg-gray-100 text-gray-500' },
+};
+
 interface CardResumoProps {
   titulo: string;
   valor: number;
@@ -102,12 +111,13 @@ const TabelaGrupo = ({
               <th className="px-4 py-3 text-right">Cadastros</th>
               <th className="px-4 py-3 text-right">Google</th>
               <th className="px-4 py-3 text-right">Meta</th>
+              <th className="px-4 py-3 text-right">Ativas</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-sm">
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                   Nenhum cadastro no período.
                 </td>
               </tr>
@@ -118,6 +128,12 @@ const TabelaGrupo = ({
                 <td className="px-4 py-2.5 text-right">{linha.total}</td>
                 <td className="px-4 py-2.5 text-right text-blue-700">{linha.google}</td>
                 <td className="px-4 py-2.5 text-right text-indigo-700">{linha.meta}</td>
+                <td className="px-4 py-2.5 text-right font-bold text-green-700">
+                  {linha.ativas}
+                  <span className="ml-1 text-xs font-normal text-gray-400">
+                    {percentual(linha.ativas, linha.total)}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -242,7 +258,7 @@ const Atribuicao = () => {
 
       {resumo && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
             <CardResumo
               titulo="Cadastros"
               valor={resumo.total_cadastros}
@@ -278,6 +294,13 @@ const Atribuicao = () => {
               icone={<Megaphone size={18} className="text-amber-600" />}
               cor="bg-amber-100"
             />
+            <CardResumo
+              titulo="Assinaturas ativas"
+              valor={resumo.assinaturas_ativas}
+              detalhe={`${percentual(resumo.assinaturas_ativas, resumo.total_cadastros)} dos cadastros · ${resumo.ativas_de_anuncio} de anúncio (G ${resumo.ativas_google} · M ${resumo.ativas_meta})`}
+              icone={<BadgeCheck size={18} className="text-emerald-600" />}
+              cor="bg-emerald-100"
+            />
           </div>
 
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
@@ -285,7 +308,8 @@ const Atribuicao = () => {
             chegaram com click-id na URL. Quem veio por busca orgânica, indicação ou
             WhatsApp aparece em “Sem atribuição” — isso é esperado, não é perda de
             rastreio. A divergência normal para o painel do anunciante vem de bloqueadores
-            e de quem cadastra em outro dispositivo.
+            e de quem cadastra em outro dispositivo. “Assinaturas ativas” é o status de
+            hoje de quem se cadastrou no período (trial não conta).
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -317,18 +341,22 @@ const Atribuicao = () => {
                       <th className="px-4 py-3">Origem</th>
                       <th className="px-4 py-3">Campanha</th>
                       <th className="px-4 py-3">Conteúdo (CTA)</th>
+                      <th className="px-4 py-3">Assinatura</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-sm">
                     {cadastros.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                        <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                           Nenhum cadastro no período.
                         </td>
                       </tr>
                     )}
                     {cadastros.map((c) => {
                       const origem = origemDoCadastro(c);
+                      const assinatura = c.assinatura_status
+                        ? STATUS_ASSINATURA[c.assinatura_status]
+                        : null;
                       return (
                         <tr key={c.id} className="hover:bg-blue-50/30 transition-colors">
                           <td className="px-4 py-2.5 font-medium">{c.nome_negocio}</td>
@@ -347,6 +375,17 @@ const Atribuicao = () => {
                           </td>
                           <td className="px-4 py-2.5 text-gray-600">
                             {c.utm_content || '—'}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {assinatura ? (
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-bold ${assinatura.className}`}
+                              >
+                                {assinatura.label}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
                           </td>
                         </tr>
                       );
