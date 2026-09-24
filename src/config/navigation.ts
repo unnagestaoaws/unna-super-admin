@@ -54,6 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
     hideWhenLimited: true,
     items: [
       { key: 'atendimento', label: 'Atendimento', to: '/atendimento', icon: 'activity' },
+      { key: 'mensagens-whatsapp', label: 'Mensagens enviadas', to: '/mensagens-whatsapp', icon: 'activity' },
       { key: 'suporte', label: 'Notificações (WAHA)', to: '/suporte', icon: 'activity' },
       { key: 'campanhas', label: 'Campanhas', to: '/campanhas', icon: 'activity' },
     ],
