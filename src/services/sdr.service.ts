@@ -258,6 +258,18 @@ class SdrServiceApi {
     return apiService.post(`/sdr/leads/${empresaId}/tracking`, data);
   }
 
+  /**
+   * Envia a abordagem pela sessão WhatsApp do suporte (WAHA) e registra o contato.
+   * O backend avança NOVO → CONTATADO; demais status do pipeline são mantidos.
+   */
+  async enviarAbordagem(empresaId: string, data: { texto: string; rotulo?: string }): Promise<{
+    success: boolean;
+    telefone: string;
+    messageId: string | null;
+  }> {
+    return apiService.post(`/sdr/leads/${empresaId}/enviar-abordagem`, data);
+  }
+
   async updateLeadStatus(empresaId: string, data: { status: string; notas?: string }): Promise<any> {
     return apiService.patch(`/sdr/leads/${empresaId}/status`, data);
   }

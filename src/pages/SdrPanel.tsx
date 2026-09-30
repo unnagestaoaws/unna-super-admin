@@ -6,8 +6,8 @@ import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 import {
-  AlertCircle, ArrowRight, Building2, Calendar, CheckSquare, ChevronDown, ChevronLeft,
-  ChevronRight, Clock, Copy, CreditCard, Filter, Kanban, LayoutList, Mail,
+  AlertCircle, ArrowRight, Building2, Calendar, Check, CheckSquare, ChevronDown, ChevronLeft,
+  ChevronRight, Clock, Copy, CreditCard, ExternalLink, Filter, Kanban, LayoutList, Loader2, Mail,
   Phone, RefreshCw, Search, Send, Square, TrendingUp, XCircle,
 } from 'lucide-react';
 import {
@@ -83,6 +83,9 @@ const SdrPanel = () => {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [approachModalOpen, setApproachModalOpen] = useState(false);
   const [approachSegment, setApproachSegment] = useState<SdrSegmentKey>('trial');
+  // Chave `${segmento}:${indice}` da mensagem em envio / já enviada neste modal.
+  const [sendingKey, setSendingKey] = useState<string | null>(null);
+  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<SdrLead | null>(null);
   const [trackingHistory, setTrackingHistory] = useState<SdrTrackingEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -301,6 +304,7 @@ const SdrPanel = () => {
       diasDesdeFim: daysSince(lead.assinatura?.data_fim ?? null),
     });
     setApproachSegment(seg);
+    setSentKeys(new Set());
     setApproachModalOpen(true);
   };
 
@@ -320,6 +324,22 @@ const SdrPanel = () => {
       return;
     }
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(texto)}`, '_blank');
+  };
+
+  /** Envio rápido pela sessão WAHA do suporte — sem passar pelo WhatsApp Web. */
+  const sendViaSupportSession = async (lead: SdrLead | null, texto: string, rotulo: string, key: string) => {
+    if (!lead || sendingKey) return;
+    setSendingKey(key);
+    try {
+      await sdrService.enviarAbordagem(lead.id, { texto, rotulo });
+      setSentKeys((prev) => new Set(prev).add(key));
+      toast.success(`Mensagem enviada para ${leadContactName(lead) || lead.nome_negocio}`);
+      refreshLeads();
+    } catch (err) {
+      toast.error((err as { message?: string })?.message || 'Erro ao enviar a mensagem');
+    } finally {
+      setSendingKey(null);
+    }
   };
 
   const leadActions = {
@@ -907,16 +927,34 @@ const SdrPanel = () => {
           <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
             {SDR_SEGMENTS[approachSegment].mensagens.map((msg, i) => {
               const texto = fillTemplate(msg.texto, templateVars(selectedLead));
+              const key = `${approachSegment}:${i}`;
+              const enviando = sendingKey === key;
+              const enviado = sentKeys.has(key);
               return (
                 <div key={i} className="border border-gray-100 dark:border-gray-700 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] font-bold uppercase text-purple-600">{msg.label}</span>
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-500" onClick={() => { void copyMessage(texto); }} title="Copiar">
                         <Copy className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-green-600" onClick={() => sendWhatsAppMessage(selectedLead, texto)} title="Enviar no WhatsApp">
-                        <Send className="w-3.5 h-3.5" />
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-500" onClick={() => sendWhatsAppMessage(selectedLead, texto)} title="Abrir no WhatsApp Web">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        className={`h-7 px-2.5 text-xs text-white ${enviado ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-green-600 hover:bg-green-700'}`}
+                        onClick={() => { void sendViaSupportSession(selectedLead, texto, msg.label, key); }}
+                        disabled={!!sendingKey}
+                        title="Enviar agora pela sessão WhatsApp do suporte"
+                      >
+                        {enviando ? (
+                          <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Enviando</>
+                        ) : enviado ? (
+                          <><Check className="w-3.5 h-3.5 mr-1" /> Enviada</>
+                        ) : (
+                          <><Send className="w-3.5 h-3.5 mr-1" /> Enviar</>
+                        )}
                       </Button>
                     </div>
                   </div>
