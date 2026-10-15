@@ -26,6 +26,28 @@ const formatarData = (data?: string | null) => {
   return Number.isNaN(valor.getTime()) ? '-' : valor.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+const SINCRONIZAVEL = new Set(['em_analise_asaas', 'aprovado', 'rejeitado_asaas'])
+
+const ETAPAS_ASAAS = [
+  ['status_comercial', 'Cadastro'],
+  ['status_documentacao', 'Documentos'],
+  ['status_conta_bancaria', 'Conta bancária'],
+] as const
+
+const SITUACAO_ETAPA: Record<string, string> = {
+  PENDING: 'pendente',
+  AWAITING_APPROVAL: 'em análise',
+  REJECTED: 'recusado',
+}
+
+const pendencia = (subconta: SubcontaResumo) => {
+  if (subconta.motivo_pendencia) return subconta.motivo_pendencia
+  const etapas = ETAPAS_ASAAS
+    .filter(([campo]) => subconta[campo] && subconta[campo] !== 'APPROVED')
+    .map(([campo, rotulo]) => `${rotulo}: ${SITUACAO_ETAPA[subconta[campo]!] || subconta[campo]}`)
+  return etapas.join(' · ') || '-'
+}
+
 const nomeEmpresa = (subconta: SubcontaResumo) =>
   subconta.empresa?.nome_negocio || subconta.nome_empresa || 'Empresa não identificada'
 
@@ -37,6 +59,7 @@ export default function Subcontas() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [aprovandoId, setAprovandoId] = useState<string | null>(null)
+  const [sincronizandoId, setSincronizandoId] = useState<string | null>(null)
 
   const carregar = async () => {
     try {
@@ -63,6 +86,19 @@ export default function Subcontas() {
       setErro(error?.message || 'Não foi possível aprovar a solicitação.')
     } finally {
       setAprovandoId(null)
+    }
+  }
+
+  const sincronizar = async (empresaId: string) => {
+    try {
+      setSincronizandoId(empresaId)
+      setErro(null)
+      const atualizada = await unnaPayAdminService.sincronizar(empresaId)
+      setLista((atuais) => atuais.map((item) => item.empresaId === empresaId ? { ...item, ...atualizada, empresaId } : item))
+    } catch (error: any) {
+      setErro(error?.message || 'Não foi possível sincronizar com o Asaas.')
+    } finally {
+      setSincronizandoId(null)
     }
   }
 
@@ -104,8 +140,11 @@ export default function Subcontas() {
                   <td className="px-4 py-3"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${STATUS_CLASSES[subconta.status] || 'bg-slate-100 text-slate-700'}`}>{subconta.status.replace(/_/g, ' ')}</span></td>
                   <td className="px-4 py-3 text-muted-foreground"><span className="inline-flex items-center gap-1.5"><Clock3 className="w-3.5 h-3.5" />{formatarData(subconta.solicitado_em || subconta.createdAt)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{formatarData(subconta.analisado_em || subconta.updatedAt)}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-xs"><span className="line-clamp-2">{subconta.motivo_pendencia || '-'}</span></td>
-                  <td className="px-4 py-3 text-right">{subconta.status === 'solicitado' && <Button type="button" size="sm" onClick={() => aprovar(subconta.empresaId)} disabled={aprovandoId === subconta.empresaId} className="gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />{aprovandoId === subconta.empresaId ? 'Aprovando...' : 'Aprovar'}</Button>}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-xs"><span className="line-clamp-2">{pendencia(subconta)}</span></td>
+                  <td className="px-4 py-3 text-right">
+                    {subconta.status === 'solicitado' && <Button type="button" size="sm" onClick={() => aprovar(subconta.empresaId)} disabled={aprovandoId === subconta.empresaId} className="gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />{aprovandoId === subconta.empresaId ? 'Aprovando...' : 'Aprovar'}</Button>}
+                    {SINCRONIZAVEL.has(subconta.status) && <Button type="button" variant="outline" size="sm" onClick={() => sincronizar(subconta.empresaId)} disabled={sincronizandoId === subconta.empresaId} className="gap-1.5"><RefreshCw className={`w-3.5 h-3.5 ${sincronizandoId === subconta.empresaId ? 'animate-spin' : ''}`} />{sincronizandoId === subconta.empresaId ? 'Sincronizando...' : 'Sincronizar'}</Button>}
+                  </td>
                 </tr>
               ))}
             </tbody>

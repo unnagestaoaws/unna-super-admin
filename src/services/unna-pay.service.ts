@@ -24,6 +24,9 @@ export interface SubcontaResumo {
   createdAt?: string | null
   updatedAt?: string | null
   motivo_pendencia?: string | null
+  status_comercial?: string | null
+  status_documentacao?: string | null
+  status_conta_bancaria?: string | null
   empresa?: {
     nome_negocio?: string | null
     email?: string | null
@@ -43,6 +46,10 @@ class UnnaPayAdminService {
 
   aprovar(empresaId: string): Promise<SubcontaResumo> {
     return apiService.post<SubcontaResumo>(`/super-admin/asaas-recebimento/${empresaId}/aprovar`)
+  }
+
+  sincronizar(empresaId: string): Promise<SubcontaResumo> {
+    return apiService.post<SubcontaResumo>(`/super-admin/asaas-recebimento/${empresaId}/sincronizar`)
   }
 }
 
