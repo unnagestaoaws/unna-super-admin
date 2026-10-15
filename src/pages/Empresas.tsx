@@ -290,6 +290,12 @@ const Empresas = () => {
 
 
 
+  // Nomes salvos com espaço sobrando ("Studio X ") nunca batiam com o que se
+  // digita, porque o espaço não aparece na tela. O rótulo é exibido em caixa
+  // alta, então maiúsculas e minúsculas também não contam.
+  const normalizarNomeConfirmacao = (nome?: string | null) =>
+    (nome || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('pt-BR');
+
   const handleOpenPurgeModal = (empresa: EmpresaComAssinatura) => {
     setPurgingEmpresa(empresa);
     setPurgeConfirmation('');
@@ -940,7 +946,7 @@ const Empresas = () => {
                 <Button
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                   onClick={handlePurgeEmpresa}
-                  disabled={purging || purgeConfirmation !== purgingEmpresa.nome_negocio}
+                  disabled={purging || normalizarNomeConfirmacao(purgeConfirmation) !== normalizarNomeConfirmacao(purgingEmpresa.nome_negocio)}
                 >
                   {purging ? 'Processando...' : 'Remover Tudo'}
                 </Button>
