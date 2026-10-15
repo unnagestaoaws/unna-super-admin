@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { AlertTriangle, Building2, CheckCircle2, Clock3, Loader2, RefreshCw, Wallet } from 'lucide-react'
+import { AlertTriangle, Building2, CheckCircle2, Clock3, FileText, Loader2, RefreshCw, Wallet } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   unnaPayAdminService,
   type SubcontaResumo,
 } from '@/services/unna-pay.service'
+import SubcontaDadosModal from './SubcontaDadosModal'
 
 const STATUS_CLASSES: Record<string, string> = {
   solicitado: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
@@ -41,6 +42,7 @@ const SITUACAO_ETAPA: Record<string, string> = {
 }
 
 const pendencia = (subconta: SubcontaResumo) => {
+  if (subconta.status === 'rejeitado_unna' && subconta.motivo_rejeicao) return `Reprovado: ${subconta.motivo_rejeicao}`
   if (subconta.motivo_pendencia) return subconta.motivo_pendencia
   const etapas = ETAPAS_ASAAS
     .filter(([campo]) => subconta[campo] && subconta[campo] !== 'APPROVED')
@@ -60,6 +62,7 @@ export default function Subcontas() {
   const [erro, setErro] = useState<string | null>(null)
   const [aprovandoId, setAprovandoId] = useState<string | null>(null)
   const [sincronizandoId, setSincronizandoId] = useState<string | null>(null)
+  const [detalheId, setDetalheId] = useState<string | null>(null)
 
   const carregar = async () => {
     try {
@@ -77,13 +80,19 @@ export default function Subcontas() {
     carregar()
   }, [])
 
+  const atualizarItem = (empresaId: string, atualizada: SubcontaResumo) =>
+    setLista((atuais) => atuais.map((item) => item.empresaId === empresaId ? { ...item, ...atualizada, empresaId } : item))
+
   const aprovar = async (empresaId: string) => {
     try {
       setAprovandoId(empresaId)
-      const atualizada = await unnaPayAdminService.aprovar(empresaId)
-      setLista((atuais) => atuais.map((item) => item.empresaId === empresaId ? { ...item, ...atualizada, empresaId } : item))
+      setErro(null)
+      atualizarItem(empresaId, await unnaPayAdminService.aprovar(empresaId))
+      return null
     } catch (error: any) {
-      setErro(error?.message || 'Não foi possível aprovar a solicitação.')
+      const mensagem = error?.message || 'Não foi possível aprovar a solicitação.'
+      setErro(mensagem)
+      return mensagem
     } finally {
       setAprovandoId(null)
     }
@@ -93,8 +102,7 @@ export default function Subcontas() {
     try {
       setSincronizandoId(empresaId)
       setErro(null)
-      const atualizada = await unnaPayAdminService.sincronizar(empresaId)
-      setLista((atuais) => atuais.map((item) => item.empresaId === empresaId ? { ...item, ...atualizada, empresaId } : item))
+      atualizarItem(empresaId, await unnaPayAdminService.sincronizar(empresaId))
     } catch (error: any) {
       setErro(error?.message || 'Não foi possível sincronizar com o Asaas.')
     } finally {
@@ -141,16 +149,26 @@ export default function Subcontas() {
                   <td className="px-4 py-3 text-muted-foreground"><span className="inline-flex items-center gap-1.5"><Clock3 className="w-3.5 h-3.5" />{formatarData(subconta.solicitado_em || subconta.createdAt)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{formatarData(subconta.analisado_em || subconta.updatedAt)}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground max-w-xs"><span className="line-clamp-2">{pendencia(subconta)}</span></td>
-                  <td className="px-4 py-3 text-right">
-                    {subconta.status === 'solicitado' && <Button type="button" size="sm" onClick={() => aprovar(subconta.empresaId)} disabled={aprovandoId === subconta.empresaId} className="gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />{aprovandoId === subconta.empresaId ? 'Aprovando...' : 'Aprovar'}</Button>}
+                  <td className="px-4 py-3 text-right"><div className="inline-flex gap-2">
+                    {subconta.status === 'solicitado'
+                      ? <Button type="button" size="sm" onClick={() => setDetalheId(subconta.empresaId)} className="gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />Analisar</Button>
+                      : <Button type="button" variant="outline" size="sm" onClick={() => setDetalheId(subconta.empresaId)} className="gap-1.5"><FileText className="w-3.5 h-3.5" />Dados</Button>}
                     {SINCRONIZAVEL.has(subconta.status) && <Button type="button" variant="outline" size="sm" onClick={() => sincronizar(subconta.empresaId)} disabled={sincronizandoId === subconta.empresaId} className="gap-1.5"><RefreshCw className={`w-3.5 h-3.5 ${sincronizandoId === subconta.empresaId ? 'animate-spin' : ''}`} />{sincronizandoId === subconta.empresaId ? 'Sincronizando...' : 'Sincronizar'}</Button>}
-                  </td>
+                  </div></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </Card>
+
+      <SubcontaDadosModal
+        empresaId={detalheId}
+        onClose={() => setDetalheId(null)}
+        onAprovar={aprovar}
+        aprovando={Boolean(detalheId) && aprovandoId === detalheId}
+        onReprovada={atualizarItem}
+      />
     </div>
   )
 }
