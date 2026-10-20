@@ -160,6 +160,7 @@ class SupportService {
         limit?: number;
         search?: string;
         subscriptionStatus?: string;
+        periodoDias?: number;
     }) {
         const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());
@@ -168,6 +169,7 @@ class SupportService {
         if (params?.subscriptionStatus && params.subscriptionStatus !== 'all') {
             queryParams.append('subscriptionStatus', params.subscriptionStatus);
         }
+        if (params?.periodoDias) queryParams.append('periodoDias', params.periodoDias.toString());
         const qs = queryParams.toString();
         return this.request<{
             data: {
@@ -177,6 +179,7 @@ class SupportService {
                 empresaId: string;
                 nomeEmpresa: string;
                 assinaturaStatus: string | null;
+                assinaturaFim: string | null;
                 planoNome: string | null;
             }[];
             total: number;

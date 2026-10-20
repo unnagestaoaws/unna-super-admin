@@ -31,8 +31,12 @@ interface Recipient {
     empresaId: string;
     nomeEmpresa: string;
     assinaturaStatus: string | null;
+    assinaturaFim: string | null;
     planoNome: string | null;
 }
+
+// Expirada/cancelada: o período (fim do último período pago) só vale para esses status.
+const STATUS_COM_PERIODO = ['EXPIRED', 'CANCELLED'];
 
 interface NotificationHistoryItem {
     id: string;
@@ -60,6 +64,7 @@ export default function NotificacaoMassa() {
     // Filters
     const [searchQuery, setSearchQuery] = useState('');
     const [subFilter, setSubFilter] = useState('all');
+    const [periodoDias, setPeriodoDias] = useState('60');
 
     // Message Composition
     const [messageText, setMessageText] = useState('');
@@ -158,6 +163,10 @@ export default function NotificacaoMassa() {
                 limit: 5000,
                 search: searchQuery || undefined,
                 subscriptionStatus: subFilter !== 'all' ? subFilter : undefined,
+                periodoDias:
+                    STATUS_COM_PERIODO.includes(subFilter) && periodoDias !== 'all'
+                        ? Number(periodoDias)
+                        : undefined,
             });
             setRecipients(res.data || []);
             if (res.data?.length > 0 && !previewRecipient) {
@@ -169,7 +178,7 @@ export default function NotificacaoMassa() {
         } finally {
             setLoadingRecipients(false);
         }
-    }, [searchQuery, subFilter, previewRecipient]);
+    }, [searchQuery, subFilter, periodoDias, previewRecipient]);
 
     const fetchHistory = useCallback(async () => {
         setLoadingHistory(true);
@@ -196,7 +205,7 @@ export default function NotificacaoMassa() {
 
     useEffect(() => {
         fetchRecipients();
-    }, [searchQuery, subFilter]);
+    }, [searchQuery, subFilter, periodoDias]);
 
     // ─── Selection Helpers ─────────────────────────────────────
     const toggleSelectRecipient = (recipient: Recipient) => {
@@ -413,6 +422,21 @@ export default function NotificacaoMassa() {
                                 <option value="EXPIRED">Expiradas (EXPIRED)</option>
                                 <option value="none">Sem Assinatura</option>
                             </select>
+
+                            {STATUS_COM_PERIODO.includes(subFilter) && (
+                                <select
+                                    value={periodoDias}
+                                    onChange={(e) => setPeriodoDias(e.target.value)}
+                                    className="w-full py-1.5 px-3 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none"
+                                >
+                                    <option value="30">Período pago terminou nos últimos 30 dias</option>
+                                    <option value="60">Período pago terminou nos últimos 60 dias</option>
+                                    <option value="90">Período pago terminou nos últimos 90 dias</option>
+                                    <option value="120">Período pago terminou nos últimos 120 dias</option>
+                                    <option value="180">Período pago terminou nos últimos 180 dias</option>
+                                    <option value="all">Qualquer data</option>
+                                </select>
+                            )}
                         </div>
                     </div>
 
@@ -457,15 +481,22 @@ export default function NotificacaoMassa() {
                                         </div>
 
                                         {/* Status Tag */}
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                            rec.assinaturaStatus === 'ACTIVE' 
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400'
-                                                : rec.assinaturaStatus === 'TRIAL'
-                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400'
-                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                                        }`}>
-                                            {rec.assinaturaStatus || 'Sem assinatura'}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-0.5">
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                                rec.assinaturaStatus === 'ACTIVE'
+                                                    ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400'
+                                                    : rec.assinaturaStatus === 'TRIAL'
+                                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400'
+                                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                            }`}>
+                                                {rec.assinaturaStatus || 'Sem assinatura'}
+                                            </span>
+                                            {rec.assinaturaFim && STATUS_COM_PERIODO.includes(rec.assinaturaStatus || '') && (
+                                                <span className="text-[10px] text-gray-500">
+                                                    até {new Date(rec.assinaturaFim).toLocaleDateString('pt-BR')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })
