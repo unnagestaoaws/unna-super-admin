@@ -410,6 +410,7 @@ export default function NotificacaoMassa() {
                                 <option value="ACTIVE">Ativas (ACTIVE)</option>
                                 <option value="TRIAL">Testando (TRIAL)</option>
                                 <option value="CANCELLED">Canceladas (CANCELLED)</option>
+                                <option value="EXPIRED">Expiradas (EXPIRED)</option>
                                 <option value="none">Sem Assinatura</option>
                             </select>
                         </div>
