@@ -498,7 +498,7 @@ const Empresas = () => {
               <form onSubmit={handleSearchSubmit} className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Nome, CNPJ, Email ou ID..."
+                  placeholder="Nome, CNPJ, Email ou Telefone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 h-10 text-sm border-gray-200 focus:ring-primary/20"
