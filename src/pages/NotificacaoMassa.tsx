@@ -20,6 +20,7 @@ import {
     HelpCircle
 } from 'lucide-react';
 import { supportService } from '@/services/support.service';
+import { nomeDeTratamento } from '@/utils/nomeTratamento';
 import { toast } from 'sonner';
 
 type SessionStatus = 'not_found' | 'disconnected' | 'connecting' | 'qr_ready' | 'connected';
@@ -231,7 +232,7 @@ export default function NotificacaoMassa() {
         if (!messageText) return 'Sua mensagem aparecerá aqui...';
         if (!previewRecipient) return messageText;
         return messageText
-            .replace(/{nome_admin}/g, previewRecipient.nome)
+            .replace(/{nome_admin}/g, nomeDeTratamento(previewRecipient.nome))
             .replace(/{nome_empresa}/g, previewRecipient.nomeEmpresa || 'sua empresa');
     };
 
