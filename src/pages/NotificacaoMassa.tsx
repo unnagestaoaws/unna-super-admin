@@ -34,6 +34,7 @@ interface Recipient {
     assinaturaStatus: string | null;
     assinaturaFim: string | null;
     planoNome: string | null;
+    ultimoContatoEm: string | null;
 }
 
 // Expirada/cancelada: o período (fim do último período pago) só vale para esses status.
@@ -66,6 +67,7 @@ export default function NotificacaoMassa() {
     const [searchQuery, setSearchQuery] = useState('');
     const [subFilter, setSubFilter] = useState('all');
     const [periodoDias, setPeriodoDias] = useState('60');
+    const [ocultarContatadosDias, setOcultarContatadosDias] = useState('15');
 
     // Message Composition
     const [messageText, setMessageText] = useState('');
@@ -168,6 +170,8 @@ export default function NotificacaoMassa() {
                     STATUS_COM_PERIODO.includes(subFilter) && periodoDias !== 'all'
                         ? Number(periodoDias)
                         : undefined,
+                ocultarContatadosDias:
+                    ocultarContatadosDias !== 'all' ? Number(ocultarContatadosDias) : undefined,
             });
             setRecipients(res.data || []);
             if (res.data?.length > 0 && !previewRecipient) {
@@ -179,7 +183,7 @@ export default function NotificacaoMassa() {
         } finally {
             setLoadingRecipients(false);
         }
-    }, [searchQuery, subFilter, periodoDias, previewRecipient]);
+    }, [searchQuery, subFilter, periodoDias, ocultarContatadosDias, previewRecipient]);
 
     const fetchHistory = useCallback(async () => {
         setLoadingHistory(true);
@@ -206,7 +210,7 @@ export default function NotificacaoMassa() {
 
     useEffect(() => {
         fetchRecipients();
-    }, [searchQuery, subFilter, periodoDias]);
+    }, [searchQuery, subFilter, periodoDias, ocultarContatadosDias]);
 
     // ─── Selection Helpers ─────────────────────────────────────
     const toggleSelectRecipient = (recipient: Recipient) => {
@@ -265,6 +269,8 @@ export default function NotificacaoMassa() {
                 toast.success('Envio enfileirado! Os disparos ocorrem aos poucos, dentro da janela segura (08h–20h).');
                 setActiveBroadcastId(res.notificacaoId);
                 setSelectedRecipients([]);
+                // Quem acabou de entrar na fila já conta como contatado: some da lista.
+                fetchRecipients();
                 // O envio agora é espalhado ao longo do dia: apenas monitoramos o progresso.
                 pollBroadcastStatus(res.notificacaoId);
             } else {
@@ -438,6 +444,18 @@ export default function NotificacaoMassa() {
                                     <option value="all">Qualquer data</option>
                                 </select>
                             )}
+
+                            <select
+                                value={ocultarContatadosDias}
+                                onChange={(e) => setOcultarContatadosDias(e.target.value)}
+                                className="w-full py-1.5 px-3 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white focus:outline-none"
+                            >
+                                <option value="7">Ocultar quem recebeu mensagem nos últimos 7 dias</option>
+                                <option value="15">Ocultar quem recebeu mensagem nos últimos 15 dias</option>
+                                <option value="30">Ocultar quem recebeu mensagem nos últimos 30 dias</option>
+                                <option value="60">Ocultar quem recebeu mensagem nos últimos 60 dias</option>
+                                <option value="all">Mostrar todos, mesmo quem já recebeu</option>
+                            </select>
                         </div>
                     </div>
 
@@ -495,6 +513,11 @@ export default function NotificacaoMassa() {
                                             {rec.assinaturaFim && STATUS_COM_PERIODO.includes(rec.assinaturaStatus || '') && (
                                                 <span className="text-[10px] text-gray-500">
                                                     até {new Date(rec.assinaturaFim).toLocaleDateString('pt-BR')}
+                                                </span>
+                                            )}
+                                            {rec.ultimoContatoEm && (
+                                                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                                    contatada em {new Date(rec.ultimoContatoEm).toLocaleDateString('pt-BR')}
                                                 </span>
                                             )}
                                         </div>

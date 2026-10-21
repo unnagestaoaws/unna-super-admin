@@ -161,6 +161,7 @@ class SupportService {
         search?: string;
         subscriptionStatus?: string;
         periodoDias?: number;
+        ocultarContatadosDias?: number;
     }) {
         const queryParams = new URLSearchParams();
         if (params?.page) queryParams.append('page', params.page.toString());
@@ -170,6 +171,9 @@ class SupportService {
             queryParams.append('subscriptionStatus', params.subscriptionStatus);
         }
         if (params?.periodoDias) queryParams.append('periodoDias', params.periodoDias.toString());
+        if (params?.ocultarContatadosDias) {
+            queryParams.append('ocultarContatadosDias', params.ocultarContatadosDias.toString());
+        }
         const qs = queryParams.toString();
         return this.request<{
             data: {
@@ -181,6 +185,7 @@ class SupportService {
                 assinaturaStatus: string | null;
                 assinaturaFim: string | null;
                 planoNome: string | null;
+                ultimoContatoEm: string | null;
             }[];
             total: number;
             pages: number;
