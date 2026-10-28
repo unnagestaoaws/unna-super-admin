@@ -21,6 +21,7 @@ import {
   RefreshCw,
   AlertTriangle,
   LogIn,
+  Sparkles,
   ChevronLeft,
   ChevronRight,
   Calendar,
@@ -80,6 +81,7 @@ const Empresas = () => {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessionActionLoading, setSessionActionLoading] = useState<string | null>(null);
   const [impersonandoId, setImpersonandoId] = useState<string | null>(null);
+  const [alternandoPainelId, setAlternandoPainelId] = useState<string | null>(null);
 
   const [purgeConfirmation, setPurgeConfirmation] = useState('');
   const [purging, setPurging] = useState(false);
@@ -159,6 +161,35 @@ const Empresas = () => {
       toast.error(error?.response?.data?.message || error?.message || 'Erro ao acessar painel da empresa');
     } finally {
       setImpersonandoId(null);
+    }
+  };
+
+  /**
+   * Painel novo (beta) por empresa. Vale para admin e funcionários dela: o painel
+   * atual lê `configuracoes.painel_v2` e redireciona. A origem fica gravada para
+   * comparar as ondas do teste.
+   */
+  const handleAlternarPainelV2 = async (empresa: EmpresaComAssinatura) => {
+    const ativar = empresa.configuracoes?.painel_v2 !== true;
+    const pergunta = ativar
+      ? `Colocar "${empresa.nome_negocio}" no painel novo (beta)?\n\nAdmin e funcionários passam a abrir o beta. O admin consegue voltar pelo menu.`
+      : `Tirar "${empresa.nome_negocio}" do painel novo (beta)?\n\nTodos voltam ao painel atual no próximo acesso.`;
+    if (!window.confirm(pergunta)) return;
+
+    const configuracoes = ativar
+      ? { painel_v2: true, painel_v2_desde: new Date().toISOString(), painel_v2_origem: 'superadmin' }
+      : { painel_v2: false };
+    try {
+      setAlternandoPainelId(empresa.id);
+      await empresaService.updateEmpresa(empresa.id, { configuracoes });
+      setEmpresas((lista) =>
+        lista.map((e) => (e.id === empresa.id ? { ...e, configuracoes: { ...(e.configuracoes || {}), ...configuracoes } } : e)),
+      );
+      toast.success(ativar ? 'Empresa no painel novo.' : 'Empresa de volta ao painel atual.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error?.message || 'Erro ao alterar o painel da empresa');
+    } finally {
+      setAlternandoPainelId(null);
     }
   };
 
@@ -649,7 +680,12 @@ const Empresas = () => {
                         <Building2 size={16} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">{empresa.nome_negocio}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">
+                          {empresa.nome_negocio}
+                          {empresa.configuracoes?.painel_v2 === true && (
+                            <span className="ml-2 align-middle text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">v2</span>
+                          )}
+                        </p>
                         <p className="text-[10px] text-gray-400 font-mono">{empresa.id}</p>
                       </div>
                     </div>
@@ -724,6 +760,16 @@ const Empresas = () => {
                         disabled={impersonandoId === empresa.id}
                       >
                         <LogIn className={`w-4 h-4 ${impersonandoId === empresa.id ? 'animate-pulse' : ''}`} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 w-8 p-0 ${empresa.configuracoes?.painel_v2 === true ? 'text-violet-600 bg-violet-50' : 'text-gray-400'}`}
+                        title={empresa.configuracoes?.painel_v2 === true ? 'No painel novo (beta) — clique para voltar ao atual' : 'Colocar no painel novo (beta)'}
+                        onClick={() => handleAlternarPainelV2(empresa)}
+                        disabled={alternandoPainelId === empresa.id}
+                      >
+                        <Sparkles className={`w-4 h-4 ${alternandoPainelId === empresa.id ? 'animate-pulse' : ''}`} />
                       </Button>
                       <Button
                         variant="ghost"
@@ -814,6 +860,16 @@ const Empresas = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${empresa.configuracoes?.painel_v2 === true ? 'text-violet-600 bg-violet-50' : 'text-gray-400'}`}
+                    title={empresa.configuracoes?.painel_v2 === true ? 'No painel novo (beta)' : 'Colocar no painel novo (beta)'}
+                    onClick={() => handleAlternarPainelV2(empresa)}
+                    disabled={alternandoPainelId === empresa.id}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
