@@ -52,7 +52,9 @@ const RetratoBase = ({ retrato, empresas, onAbrirLista, onIrParaAcao }: Props) =
         <CardNumero
           rotulo="MRR"
           valor={formatCurrencyDynamic(retrato.mrr)}
-          detalhe="Em dia + graça (anuais divididos por 12)"
+          detalhe={retrato.mrrSemPagamento.empresas > 0
+            ? `Em dia + graça · inclui ${formatCurrencyDynamic(retrato.mrrSemPagamento.valor)} de ${retrato.mrrSemPagamento.empresas} sem pagamento registrado`
+            : 'Em dia + graça (anuais divididos por 12)'}
           borda="border-indigo-500"
           icone={<DollarSign className="h-5 w-5 text-indigo-500" />}
           onClick={() => onAbrirLista('Compõem o MRR', de('EM_DIA', 'GRACA'))}

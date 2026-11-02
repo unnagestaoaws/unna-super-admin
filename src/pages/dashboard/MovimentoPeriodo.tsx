@@ -56,9 +56,13 @@ const MovimentoPeriodo = ({ movimento, empresas, onAbrirLista }: Props) => {
       </div>
 
       {movimento.divergentes > 0 && (
-        <p className="mt-4 text-[11px] text-gray-500">
+        <button
+          type="button"
+          className="mt-4 text-left text-[11px] text-gray-500 underline decoration-dotted hover:text-gray-700"
+          onClick={() => onAbrirLista('Data ajustada fora do fluxo de pagamento', empresas.filter((e) => e.divergente))}
+        >
           {movimento.divergentes} assinaturas com data ajustada fora do fluxo de pagamento: o movimento delas é aproximado.
-        </p>
+        </button>
       )}
     </section>
   );
