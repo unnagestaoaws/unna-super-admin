@@ -22,6 +22,7 @@ import {
 import { sistemaConfigService } from '@/services/sistema-config.service';
 import { whatsappService } from '@/services/whatsapp.service';
 import { supportService } from '@/services/support.service';
+import { superAdminService } from '@/services/super-admin.service';
 import GatewayPagamentoCard from '@/components/superadmin/GatewayPagamentoCard';
 import RecebimentoOnlineCard from '@/components/superadmin/RecebimentoOnlineCard';
 import TermosAceiteCard from '@/components/superadmin/TermosAceiteCard';
@@ -478,6 +479,33 @@ const Configuracoes = () => {
       <GatewayPagamentoCard />
       <RecebimentoOnlineCard />
       <TermosAceiteCard />
+
+      {/* Manutenção: estava em "Ações rápidas" no dashboard, que agora só mostra métricas. */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader className="bg-white dark:bg-gray-800">
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Manutenção
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button
+            className="text-xs h-9 text-blue-600 border-blue-100 hover:bg-blue-50"
+            variant="outline"
+            onClick={async () => {
+              try {
+                await superAdminService.syncPermissions();
+                toast.success('Permissões sincronizadas com sucesso!');
+              } catch (error) {
+                toast.error('Erro ao sincronizar permissões');
+              }
+            }}
+          >
+            <Shield className="w-3.5 h-3.5 mr-2" />
+            Sincronizar Permissões
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Footer info/links */}
       <div className="flex justify-center text-gray-300 py-4">

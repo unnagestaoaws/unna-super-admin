@@ -71,6 +71,64 @@ export interface OnlineUser {
   ultimo_login?: string;
 }
 
+/** Situação real de uma empresa, decidida pelas datas (ver backend `panorama-assinaturas/situacao.ts`). */
+export type SituacaoAssinatura =
+  | 'TRIAL'
+  | 'CHECKOUT_PENDENTE'
+  | 'CANCELADA_COM_ACESSO'
+  | 'CANCELADA'
+  | 'BLOQUEADA'
+  | 'EM_DIA'
+  | 'GRACA';
+
+export type EventoAssinatura = 'NOVA' | 'VOLTOU' | 'BLOQUEOU' | 'CANCELOU';
+
+export interface EmpresaPanorama {
+  id: string;
+  nome_negocio: string;
+  email: string | null;
+  telefone: string | null;
+  plano: string | null;
+  situacao: SituacaoAssinatura;
+  diasBloqueada: number | null;
+  valorMensal: number | null;
+  dataFim: string | null;
+  dataCancelamento: string | null;
+  eventosNoPeriodo: EventoAssinatura[];
+  ultimoLogin: string | null;
+  ultimoAgendamento: string | null;
+  ultimaTransacao: string | null;
+  ultimaAtividade: string | null;
+}
+
+/** Resposta de `GET /super-admin/assinaturas/panorama` (espelha `panorama-assinaturas.types.ts`). */
+export interface PanoramaAssinaturas {
+  geradoEm: string;
+  retrato: {
+    porSituacao: Record<SituacaoAssinatura, number>;
+    pagantes: number;
+    mrr: number;
+    emRisco: number;
+    semUso7d: number;
+  };
+  movimento: {
+    novas: number;
+    voltaram: number;
+    bloquearam: number;
+    cancelaram: number;
+    saldo: number;
+    divergentes: number;
+  };
+  serie: Array<{ data: string } & Record<SituacaoAssinatura, number>>;
+  historicoDesde: string | null;
+  aquisicao: {
+    porDia: Array<{ data: string; cadastros: number; viraramPagantes: number }>;
+    cadastros: number;
+    viraramPagantes: number;
+  };
+  empresas: EmpresaPanorama[];
+}
+
 export interface EngagementStats {
   id: string;
   nome_negocio: string;
@@ -477,6 +535,12 @@ class SuperAdminService {
       console.error('Erro ao buscar faturas da empresa:', error);
       throw error;
     }
+  }
+
+  /** `inicio`/`fim` em AAAA-MM-DD (dias BRT). */
+  async getPanorama(inicio: string, fim: string): Promise<PanoramaAssinaturas> {
+    const params = new URLSearchParams({ inicio, fim });
+    return apiService.get<PanoramaAssinaturas>(`/super-admin/assinaturas/panorama?${params.toString()}`);
   }
 
   async getEngagementStats(): Promise<EngagementStats[]> {
