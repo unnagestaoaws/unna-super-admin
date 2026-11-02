@@ -14,6 +14,7 @@ interface Props {
   onFechar(): void;
 }
 
+const cancelada = (e: EmpresaPanorama) => e.situacao === 'CANCELADA' || e.situacao === 'CANCELADA_COM_ACESSO';
 const dataHora = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
 
 /**
@@ -72,13 +73,19 @@ const ListaEmpresasModal = ({ titulo, empresas, aberto, onFechar }: Props) => {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${COR_SITUACAO[e.situacao]}`}>
                       {rotuloDetalhado(e)}
                     </span>
+                    {e.semPagamentoConfirmado && (
+                      <div className="mt-1 text-[10px] text-gray-500" title="Nenhum pagamento confirmado registrado: cortesia, ajuste manual ou anterior a abril/2026">
+                        sem pagamento registrado
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-600">{e.plano ?? '—'}</td>
                   <td className="px-3 py-3 text-xs text-gray-700 text-right whitespace-nowrap">
                     {e.valorMensal != null ? formatCurrencyDynamic(e.valorMensal) : '—'}
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">
-                    {e.dataCancelamento ? `cancelou ${formatarData(e.dataCancelamento)}` : formatarData(e.dataFim)}
+                    {/* Reativar mantém um data_cancelamento antigo: só vale para quem está cancelada. */}
+                    {cancelada(e) && e.dataCancelamento ? `cancelou ${formatarData(e.dataCancelamento)}` : formatarData(e.dataFim)}
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-500">{dataHora(e.ultimoLogin)}</td>
                   <td className="px-3 py-3 text-xs text-gray-500">{dataHora(e.ultimoAgendamento)}</td>

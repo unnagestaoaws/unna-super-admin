@@ -95,6 +95,10 @@ export interface EmpresaPanorama {
   dataFim: string | null;
   dataCancelamento: string | null;
   eventosNoPeriodo: EventoAssinatura[];
+  /** Nenhum pagamento confirmado registrado (cortesia, ajuste manual, anterior aos registros). */
+  semPagamentoConfirmado: boolean;
+  /** Tem pagamento confirmado, mas `data_fim` foi ajustada fora do fluxo de pagamento. */
+  divergente: boolean;
   ultimoLogin: string | null;
   ultimoAgendamento: string | null;
   ultimaTransacao: string | null;
@@ -110,6 +114,7 @@ export interface PanoramaAssinaturas {
     mrr: number;
     emRisco: number;
     semUso7d: number;
+    mrrSemPagamento: { empresas: number; valor: number };
   };
   movimento: {
     novas: number;
