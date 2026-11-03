@@ -132,6 +132,20 @@
   --color-ring: var(--sa-ring);
 }
 
+/*
+ * Tailwind v4 pinta `border`/`divide-*` sem cor com currentColor (no v3 era gray-200).
+ * Sem isto toda divisória sai preta nas telas portadas do front.
+ */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--sa-border, currentColor);
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

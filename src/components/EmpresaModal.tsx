@@ -23,9 +23,11 @@ import {
   ExternalLink,
   Copy,
   Check,
-  DollarSign
+  DollarSign,
+  Users
 } from 'lucide-react';
 import { empresaService, Empresa, CreateEmpresaData } from '@/services/empresa.service';
+import { colaboradorService, Colaborador } from '@/services/colaborador.service';
 import { planoService, Plano } from '@/services/plano.service';
 import { formatCurrencyDynamic } from '@/utils/currencyUtils';
 import { assinaturaService, CreateAssinaturaData } from '@/services/assinatura.service';
@@ -47,7 +49,9 @@ const EmpresaModal: React.FC<EmpresaModalProps> = ({ isOpen, onClose, empresa, o
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [activeTab, setActiveTab] = useState<'geral' | 'config' | 'horarios'>('geral');
   const [copied, setCopied] = useState(false);
-  
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
+  const [loadingColaboradores, setLoadingColaboradores] = useState(false);
+
   const [formData, setFormData] = useState<CreateEmpresaData>({
     nome_negocio: '', 
     email: '',
@@ -81,11 +85,25 @@ const EmpresaModal: React.FC<EmpresaModalProps> = ({ isOpen, onClose, empresa, o
           configuracoes: empresa.configuracoes || {}
         });
         setActiveTab('geral');
+        loadColaboradores(empresa.id);
       } else {
         resetForm();
       }
     }
   }, [isOpen, empresa]);
+
+  const loadColaboradores = async (empresaId: string) => {
+    setColaboradores([]);
+    setLoadingColaboradores(true);
+    try {
+      const lista = await colaboradorService.getColaboradoresSuperadmin(empresaId, 'todos');
+      setColaboradores(lista || []);
+    } catch (error) {
+      console.error('Erro ao carregar profissionais:', error);
+    } finally {
+      setLoadingColaboradores(false);
+    }
+  };
 
   const loadPlanos = async () => {
     try {
@@ -314,6 +332,48 @@ const EmpresaModal: React.FC<EmpresaModalProps> = ({ isOpen, onClose, empresa, o
                     className="h-10 text-sm font-bold"
                   />
                 </div>
+
+                {empresa && (
+                  <div className="space-y-3 pt-4 border-t border-dashed">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-500 tracking-widest">
+                      <Users size={14} className="text-primary" />
+                      Profissionais
+                      {!loadingColaboradores && <span className="text-gray-400">({colaboradores.length})</span>}
+                    </div>
+                    {loadingColaboradores ? (
+                      <p className="text-xs text-gray-400 px-1">Carregando profissionais...</p>
+                    ) : colaboradores.length === 0 ? (
+                      <p className="text-xs text-gray-400 px-1">Nenhum profissional cadastrado.</p>
+                    ) : (
+                      <ul className="border rounded-xl divide-y overflow-hidden">
+                        {colaboradores.map((c) => (
+                          <li key={c.id} className="flex items-center gap-3 px-3 py-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-gray-800 truncate">{c.nome}</p>
+                              <p className="text-[11px] text-gray-500 truncate">{c.email || 'Sem e-mail'}</p>
+                            </div>
+                            {c.email && (
+                              <button
+                                type="button"
+                                title="Copiar e-mail"
+                                onClick={() => navigator.clipboard.writeText(c.email!)}
+                                className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5"
+                              >
+                                <Copy size={12} />
+                              </button>
+                            )}
+                            <span className={cn(
+                              "shrink-0 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                              c.status === 'ativo' ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                            )}>
+                              {c.status === 'ativo' ? 'Ativo' : c.status}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
 
                 {!empresa && (
                    <div className="space-y-4 pt-4 border-t border-dashed">

@@ -1168,6 +1168,7 @@ const Empresas = () => {
                                   </div>
                                   <div className="flex flex-col">
                                     <span className="text-xs font-bold text-gray-900 dark:text-white leading-tight">{item.nome}</span>
+                                    <span className="text-[11px] text-gray-500 dark:text-gray-400">{item.email || 'Sem e-mail'}</span>
                                     <span className="text-[10px] text-gray-400 font-medium">{item.role?.nome || 'Sem Acesso'}</span>
                                   </div>
                                 </div>

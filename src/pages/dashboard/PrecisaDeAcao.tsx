@@ -35,8 +35,8 @@ const PrecisaDeAcao = ({ empresas, onAbrirLista }: Props) => {
       ) : (
         <ul className="divide-y">
           {fila.slice(0, VISIVEIS).map((e) => (
-            <li key={e.id} className="flex items-center justify-between gap-4 px-5 py-3">
-              <div className="min-w-0">
+            <li key={e.id} className="flex items-center gap-4 px-5 py-3">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-900 truncate">{e.nome_negocio}</p>
                 <p className="text-xs text-gray-500">
                   {e.plano ?? '—'} · atividade: {haQuantoTempo(e.ultimaAtividade).toLowerCase()}
