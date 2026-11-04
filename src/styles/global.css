@@ -82,3 +82,16 @@ select,
 textarea {
   font-family: inherit;
 }
+
+/*
+ * O CSS do chat da Tencent (carregado no router pelo Atendimento) traz
+ * `ul,li{padding:0;margin:0}` fora de layer, e CSS fora de layer vence os
+ * utilitários do Tailwind v4: todo px-*, py-*, m-* em ul/li sumia no app inteiro.
+ * revert-layer devolve o valor dos layers (preflight + utilitários); o chat
+ * fica de fora para manter o reset que ele espera.
+ */
+body :is(ul, li):not(.unna-atendimento *) {
+  padding: revert-layer;
+  margin: revert-layer;
+  list-style: revert-layer;
+}
