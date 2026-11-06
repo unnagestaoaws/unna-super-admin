@@ -183,6 +183,19 @@ class EmpresaService {
     return await apiService.get<{ data: Empresa[]; total: number; pages: number }>(`/empresas?${queryParams.toString()}`);
   }
 
+  // Todas as empresas, página a página. Seletores que usavam `limit: 1000`
+  // perdiam as mais antigas (a lista vem por createdAt desc) quando a base
+  // passou de mil empresas.
+  async getTodasEmpresas(): Promise<Empresa[]> {
+    const limit = 500;
+    const todas: Empresa[] = [];
+    for (let page = 1; ; page++) {
+      const { data, pages } = await this.getEmpresas({ page, limit });
+      todas.push(...(data || []));
+      if (!data?.length || page >= (pages || 1)) return todas;
+    }
+  }
+
   async getEmpresa(id: string, signal?: AbortSignal): Promise<Empresa> {
     return await apiService.get<Empresa>(`/empresas/${id}`, { signal });
   }

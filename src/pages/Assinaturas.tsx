@@ -81,12 +81,12 @@ const Assinaturas = () => {
       const [assinaturasData, planosData, empresasData] = await Promise.all([
         assinaturaService.getAssinaturas(),
         planoService.getPlanos(),
-        empresaService.getEmpresas({ limit: 1000 })
+        empresaService.getTodasEmpresas()
       ]);
-      
+
       setAssinaturas(assinaturasData);
       setPlanos(planosData);
-      setEmpresas(empresasData.data);
+      setEmpresas(empresasData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       setError('Erro ao carregar dados. Tente novamente.');

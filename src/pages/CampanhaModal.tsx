@@ -69,9 +69,7 @@ const CampanhaModal: React.FC<CampanhaModalProps> = ({ isOpen, onClose, campanha
 
     const loadEmpresas = async () => {
         try {
-            const response = await empresaService.getEmpresas({ limit: 2000 });
-            const data = Array.isArray(response) ? response : (response.data || []);
-            setEmpresas(data);
+            setEmpresas(await empresaService.getTodasEmpresas());
         } catch (error) {
             console.error('Erro ao carregar empresas:', error);
         }

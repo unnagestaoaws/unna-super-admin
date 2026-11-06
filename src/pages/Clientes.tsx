@@ -67,12 +67,7 @@ const Clientes = () => {
   const fetchEmpresas = async () => {
     try {
       setLoadingEmpresas(true);
-      const response = await empresaService.getEmpresas({ limit: 1000 });
-      if (response && response.data) {
-        setEmpresas(response.data);
-      } else if (Array.isArray(response)) {
-        setEmpresas(response);
-      }
+      setEmpresas(await empresaService.getTodasEmpresas());
     } catch (error) {
       console.error('Erro ao carregar empresas:', error);
       toast.error('Não foi possível carregar a lista de empresas.');
